@@ -1,29 +1,24 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/M-Endymion/mecm-health-dashboard/main/thumbnail.png" alt="MECM Health Dashboard" width="100%" />
+  <img src="https://raw.githubusercontent.com/M-Endymion/mecm-health-dashboard/main/thumbnail-mecm-health.png" alt="MECM Health Dashboard" width="100%" />
 </div>
 
 <br>
 
 # MECM Client Health Dashboard
 
-A **Streamlit** web dashboard for visualizing MECM/SCCM client health reports.
-
-Built as a companion to my PowerShell and Python client health tools.
+A beautiful **Streamlit** web dashboard for visualizing MECM/SCCM client health.
 
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
 
 ---
 
 ## Features
 
-- Upload multiple JSON health reports
-- Overview metrics and failing clients
 - Interactive charts (Memory, Disk, CPU)
-- Data table with filtering
-- Export to CSV
-- Clean, responsive design
+- Failing client highlighting
+- CSV + PDF export
+- Works with reports from `cross-platform-client-health`
 
 ---
 
@@ -38,12 +33,28 @@ streamlit run app.py
 
 ---
 
-HH How to Use
+## How to Use
 
 1. Run the dashboard locally (```streamlit run app.py```)
 2. Generate reports using my cross-platform-client-health tool
 3. Upload the JSON files or place them in the ```reports/``` folder
 4. View charts and compliance status
+
+---
+
+## Using Sample Data
+
+1. Run the sample data generator:
+   ```python generate_sample_data.py```
+2. Click **"Load Sample Data"** in the sidebar, or just refresh the dashboard — it will automatically load files from the ```reports/``` folder.
+
+---
+
+### Deployment
+
+- **Streamlit Cloud:** Just connect the repo at share.streamlit.io
+- **Docker:** See Dockerfile in the repo
+- **Local:** streamlit run app.py
 
 ---
 
