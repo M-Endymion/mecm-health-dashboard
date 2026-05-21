@@ -4,6 +4,7 @@ import plotly.express as px
 from pathlib import Path
 import json
 from datetime import datetime
+from io import BytesIO
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
@@ -15,8 +16,9 @@ st.title("🖥️ MECM Client Health Dashboard")
 # Sidebar
 st.sidebar.header("Data Source")
 uploaded_files = st.sidebar.file_uploader("Upload JSON reports", type=["json"], accept_multiple_files=True)
+
 if st.sidebar.button("Load Sample Data"):
-    st.success("Sample data loaded! (Run generate_sample_data.py first)")
+    st.success("Sample data loaded! (Make sure you ran generate_sample_data.py)")
 
 # Load data
 all_data = []
@@ -67,23 +69,20 @@ with c2:
     fig = px.bar(df, x="Hostname", y="Disk_Free_GB", title="Free Disk Space (GB)")
     st.plotly_chart(fig, use_container_width=True)
 
-# PDF Export - FIXED VERSION
+# === FIXED PDF EXPORT ===
 if st.button("📄 Export Full Report as PDF"):
     with st.spinner("Generating PDF..."):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        pdf_filename = f"MECM_Health_Report_{timestamp}.pdf"
-        pdf_path = Path(pdf_filename)
-        
-        doc = SimpleDocTemplate(str(pdf_path), pagesize=letter)
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
         styles = getSampleStyleSheet()
         elements = []
-        
+
         elements.append(Paragraph("MECM Client Health Report", styles['Title']))
         elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
         
-        # Convert DataFrame to table
-        data_table = [df.columns.tolist()] + df.values.tolist()
-        t = Table(data_table)
+        # Table data
+        table_data = [df.columns.tolist()] + df.values.tolist()
+        t = Table(table_data)
         t.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.grey),
             ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
@@ -96,15 +95,14 @@ if st.button("📄 Export Full Report as PDF"):
         elements.append(t)
         
         doc.build(elements)
+        buffer.seek(0)
         
-        # Offer download
-        with open(pdf_path, "rb") as f:
-            st.download_button(
-                label="⬇️ Download PDF Report",
-                data=f,
-                file_name=pdf_filename,
-                mime="application/pdf"
-            )
-        st.success(f"PDF generated successfully!")
+        st.download_button(
+            label="⬇️ Download PDF Report",
+            data=buffer,
+            file_name=f"MECM_Health_Report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+            mime="application/pdf"
+        )
+        st.success("PDF Ready!")
 
 st.caption("Built by Jason Ray • Companion to cross-platform-client-health tool")
