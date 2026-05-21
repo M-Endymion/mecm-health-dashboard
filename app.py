@@ -15,12 +15,10 @@ st.title("🖥️ MECM Client Health Dashboard")
 # Sidebar
 st.sidebar.header("Data Source")
 uploaded_files = st.sidebar.file_uploader("Upload JSON reports", type=["json"], accept_multiple_files=True)
-use_sample = st.sidebar.button("Load Sample Data")
+if st.sidebar.button("Load Sample Data"):
+    st.success("Sample data loaded! (Run generate_sample_data.py first)")
 
-if use_sample:
-    st.success("Sample data loaded!")
-
-# Load data logic (same as before, but cleaner)
+# Load data
 all_data = []
 reports_folder = Path("reports")
 
@@ -29,51 +27,84 @@ if uploaded_files:
         all_data.append(json.load(file))
 elif reports_folder.exists():
     for f in reports_folder.glob("*.json"):
-        with open(f) as file:
-            all_data.append(json.load(file))
+        try:
+            with open(f) as file:
+                all_data.append(json.load(file))
+        except:
+            pass
 
 if not all_data:
     st.info("👆 Upload JSON files or click 'Load Sample Data'")
     st.stop()
 
+# Create DataFrame
 df = pd.DataFrame([{
     "Hostname": d["system"]["hostname"],
     "OS": d["system"]["os"],
     "Disk_Free_GB": round(d["disk"].get("free_gb", 0), 1),
     "Memory_%": d["memory"].get("percent_used", 0),
     "CPU_%": d["cpu"].get("percent_used", 0),
-    "MECM": "✅" if d.get("mecm", {}).get("installed") else "❌"
+    "MECM": "✅ Installed" if d.get("mecm", {}).get("installed") else "❌ Not Found"
 } for d in all_data])
 
-# Main Dashboard
+# Dashboard
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total Clients", len(df))
 col2.metric("High Memory", len(df[df["Memory_%"] > 85]))
 col3.metric("Low Disk", len(df[df["Disk_Free_GB"] < 25]))
-col4.metric("MECM Installed", len(df[df["MECM"] == "✅"]))
+col4.metric("MECM Installed", len(df[df["MECM"].str.contains("Installed")]))
 
 st.dataframe(df, use_container_width=True)
 
 # Charts
 c1, c2 = st.columns(2)
 with c1:
-    fig = px.bar(df, x="Hostname", y="Memory_%", color="Memory_%", title="Memory Usage")
-    st.plotly_chart(fig, use_container_width=True)
-with c2:
-    fig = px.bar(df, x="Hostname", y="Disk_Free_GB", title="Free Disk Space")
+    fig = px.bar(df, x="Hostname", y="Memory_%", color="Memory_%", 
+                 color_continuous_scale="RdYlGn_r", title="Memory Usage %")
     st.plotly_chart(fig, use_container_width=True)
 
-# PDF Export
+with c2:
+    fig = px.bar(df, x="Hostname", y="Disk_Free_GB", title="Free Disk Space (GB)")
+    st.plotly_chart(fig, use_container_width=True)
+
+# PDF Export - FIXED VERSION
 if st.button("📄 Export Full Report as PDF"):
     with st.spinner("Generating PDF..."):
-        pdf_path = f"MECM_Health_Report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
-        doc = SimpleDocTemplate(pdf_path, pagesize=letter)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        pdf_filename = f"MECM_Health_Report_{timestamp}.pdf"
+        pdf_path = Path(pdf_filename)
+        
+        doc = SimpleDocTemplate(str(pdf_path), pagesize=letter)
         styles = getSampleStyleSheet()
         elements = []
+        
         elements.append(Paragraph("MECM Client Health Report", styles['Title']))
-        # ... (simple table export)
-        st.success(f"PDF saved as {pdf_path}")
+        elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
+        
+        # Convert DataFrame to table
+        data_table = [df.columns.tolist()] + df.values.tolist()
+        t = Table(data_table)
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.grey),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0,0), (-1,0), 12),
+            ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+            ('GRID', (0,0), (-1,-1), 1, colors.black)
+        ]))
+        elements.append(t)
+        
+        doc.build(elements)
+        
+        # Offer download
         with open(pdf_path, "rb") as f:
-            st.download_button("Download PDF", f, pdf_path)
+            st.download_button(
+                label="⬇️ Download PDF Report",
+                data=f,
+                file_name=pdf_filename,
+                mime="application/pdf"
+            )
+        st.success(f"PDF generated successfully!")
 
 st.caption("Built by Jason Ray • Companion to cross-platform-client-health tool")
