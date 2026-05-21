@@ -13,6 +13,13 @@ A beautiful **Streamlit** web dashboard for visualizing MECM/SCCM client health.
 
 ---
 
+## Screenshots
+
+![Dashboard Overview](https://raw.githubusercontent.com/M-Endymion/mecm-health-dashboard/main/screenshots/dashboard.png)
+![Charts View](https://raw.githubusercontent.com/M-Endymion/mecm-health-dashboard/main/screenshots/charts.png)
+
+---
+
 ## Features
 
 - Interactive charts (Memory, Disk, CPU)
