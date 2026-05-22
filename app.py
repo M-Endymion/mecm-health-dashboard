@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 from pathlib import Path
 import json
+import glob
 from datetime import datetime
 from io import BytesIO
 from reportlab.lib import colors
@@ -10,15 +11,22 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 
-st.set_page_config(page_title="MECM Health Dashboard", layout="wide")
+st.set_page_config(page_title="MECM Client Health Dashboard", layout="wide")
 st.title("🖥️ MECM Client Health Dashboard")
 
-# Sidebar
 st.sidebar.header("Data Source")
-uploaded_files = st.sidebar.file_uploader("Upload JSON reports", type=["json"], accept_multiple_files=True)
 
-if st.sidebar.button("Load Sample Data"):
-    st.success("Sample data loaded! (Make sure you ran generate_sample_data.py)")
+# === NEW: Generate Sample Data Button ===
+if st.sidebar.button("📊 Generate Sample Data"):
+    try:
+        from generate_sample_data import generate_sample_data
+        generate_sample_data(12)
+        st.sidebar.success("✅ Sample data generated (12 clients)!")
+        st.rerun()
+    except ImportError:
+        st.sidebar.error("generate_sample_data.py not found.")
+
+uploaded_files = st.sidebar.file_uploader("Upload JSON reports", type=["json"], accept_multiple_files=True)
 
 # Load data
 all_data = []
@@ -36,7 +44,7 @@ elif reports_folder.exists():
             pass
 
 if not all_data:
-    st.info("👆 Upload JSON files or click 'Load Sample Data'")
+    st.info("👆 Click **'Generate Sample Data'** in the sidebar or upload your own JSON reports.")
     st.stop()
 
 # Create DataFrame
@@ -49,7 +57,7 @@ df = pd.DataFrame([{
     "MECM": "✅ Installed" if d.get("mecm", {}).get("installed") else "❌ Not Found"
 } for d in all_data])
 
-# Dashboard
+# Dashboard Layout
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total Clients", len(df))
 col2.metric("High Memory", len(df[df["Memory_%"] > 85]))
@@ -69,7 +77,7 @@ with c2:
     fig = px.bar(df, x="Hostname", y="Disk_Free_GB", title="Free Disk Space (GB)")
     st.plotly_chart(fig, use_container_width=True)
 
-# === FIXED PDF EXPORT ===
+# PDF Export
 if st.button("📄 Export Full Report as PDF"):
     with st.spinner("Generating PDF..."):
         buffer = BytesIO()
@@ -80,7 +88,6 @@ if st.button("📄 Export Full Report as PDF"):
         elements.append(Paragraph("MECM Client Health Report", styles['Title']))
         elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
         
-        # Table data
         table_data = [df.columns.tolist()] + df.values.tolist()
         t = Table(table_data)
         t.setStyle(TableStyle([
@@ -105,4 +112,4 @@ if st.button("📄 Export Full Report as PDF"):
         )
         st.success("PDF Ready!")
 
-st.caption("Built by Jason Ray • Companion to cross-platform-client-health tool")
+st.caption("Companion tool to cross-platform-client-health • Built by Jason Ray")
