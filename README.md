@@ -13,6 +13,12 @@ A beautiful **Streamlit** web dashboard for visualizing MECM/SCCM client health.
 
 ---
 
+## Live Demo
+
+**Try it here:** [mecm-health-dashboard.streamlit.app](https://mecm-health-dashboard.streamlit.app)
+
+---
+
 ## Screenshots
 
 ![Dashboard Overview](https://raw.githubusercontent.com/M-Endymion/mecm-health-dashboard/main/screenshots/dashboard.png)
