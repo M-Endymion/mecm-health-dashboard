@@ -2,7 +2,7 @@ name: Keep Streamlit Awake
 
 on:
   schedule:
-    - cron: '0 */6 * * *'     # Runs every 6 hours
+    - cron: '0 */4 * * *'     # Every 4 hours
   workflow_dispatch:
 
 jobs:
@@ -12,5 +12,6 @@ jobs:
     steps:
       - name: Ping Streamlit App to keep it awake
         run: |
+          echo "Pinging app at ${{ secrets.STREAMLIT_URL }}"
           curl -I -X GET "${{ secrets.STREAMLIT_URL }}" || true
-          echo "✅ Ping sent to wake up the app"
+          echo "✅ Ping sent at $(date)"
